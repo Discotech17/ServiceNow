@@ -25,3 +25,4 @@
 })(current, event, email, logger, classifier);
 
 // Incident Table
+// Create an incident from an inbound email
