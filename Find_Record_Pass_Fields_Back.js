@@ -2,7 +2,7 @@ var FieldReturnInclude = Class.create();
 FieldReturnInclude.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
   
   getRecordFunction: function() {
-    var record = this.getParamter('sysparm_rec'); // receive record param
+    var record = this.getParamater('sysparm_rec'); // receive record param
     var table = this.getParamater('sysparm_table'); // receive table param
     
     var company = new GlideRecord(table); // query on table param
