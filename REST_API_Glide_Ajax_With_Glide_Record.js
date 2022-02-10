@@ -32,7 +32,7 @@ getCaller.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
 
             return JSON.stringify({
                 'test': data,
-                'mgrUpi': userMgr.getValue('sys_id')
+                'mgrUser': userMgr.getValue('sys_id')
             });
         } catch (ex) {
             var message = ex.getMessage();
