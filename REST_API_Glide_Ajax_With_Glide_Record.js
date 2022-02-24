@@ -1,4 +1,3 @@
-EXTERNAL MAIL: Do not click links or open attachments unless you know the content is safe.
 var getCaller = Class.create();
 getCaller.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
 
