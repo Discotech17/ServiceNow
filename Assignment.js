@@ -1,11 +1,8 @@
 var list = new GlideRecord('sysrule_assignment');
 list.addActiveQuery();
-list.addEncodedQuery('tableNOT LIKEhr_core');
-//list.addQuery('table', 'incident');
-//list.addQuery('condition', 'CONTAINS', '^NQ');
+list.addEncodedQuery('tableNOT LIKEhr_core^tableNOT LIKEsc_req_item');
 list.orderBy('table');
 list.orderBy('name');
-//list.setLimit(5);
 list.query();
 
 var listArr = [];
@@ -28,31 +25,31 @@ listArr = listArr.toString().replaceAll(' | ', ',').split(',');
 
 var x = 9;
 
-names = listArr.filter(function(value, index, arr) {
+names = listArr.filter(function (value, index, arr) {
     return index % x == 0
 });
-tables = listArr.filter(function(value, index, arr) {
+tables = listArr.filter(function (value, index, arr) {
     return index % x == 1
 });
-conditions = listArr.filter(function(value, index, arr) {
+conditions = listArr.filter(function (value, index, arr) {
     return index % x == 2
 });
-order = listArr.filter(function(value, index, arr) {
+order = listArr.filter(function (value, index, arr) {
     return index % x == 3
 });
-script = listArr.filter(function(value, index, arr) {
+script = listArr.filter(function (value, index, arr) {
     return index % x == 4
 });
-user = listArr.filter(function(value, index, arr) {
+user = listArr.filter(function (value, index, arr) {
     return index % x == 5
 });
-group = listArr.filter(function(value, index, arr) {
+group = listArr.filter(function (value, index, arr) {
     return index % x == 6
 });
-sysID = listArr.filter(function(value, index, arr) {
+sysID = listArr.filter(function (value, index, arr) {
     return index % x == 7
 });
-matchConditions = listArr.filter(function(value, index, arr) {
+matchConditions = listArr.filter(function (value, index, arr) {
     return index % x == 8
 });
 
@@ -302,9 +299,9 @@ for (var a = 0; a < conditions.length; a++) {
             getFormRecord.orderByDesc('sys_created_on');
             getFormRecord.setLimit(1);
             getFormRecord.query();
-          
-          
-          encodedQueryDisplay.push(' ');
+
+
+            encodedQueryDisplay.push(' ');
 
         }
     }
@@ -540,25 +537,28 @@ for (var a = 0; a < conditions.length; a++) {
         var recordQuery = conditions[a].toString().substring(operatorChar + operator[a].length);
         //gs.info('ONE PERIOD, NO EQUALS, AND OR | ' + tableQuery + ' | ' + fieldQuery + ' | ' + recordQuery + ' | ' + conditions[a] + ' | ' + ' | ' + operator[a]);
 
-        var getTable = new GlideRecord('sys_db_object');
-        getTable.get('name', tableQuery);
+        var dictionary = new GlideRecord('sys_dictionary');
+        dictionary.get('element', fieldQuery);
 
-        if (getTable.getValue('name') != null) {
-            var dictionary = new GlideRecord('sys_dictionary');
-            dictionary.get('element', fieldQuery);
+        if (dictionary.getValue('internal_type') == 'reference' && recordQuery !== 'EMPTY' && recordQuery.length == '32') {
+            var getRecord = new GlideRecord(dictionary.getValue('reference'));
+            getRecord.get(fieldQuery, recordQuery);
 
-            displayField.push(dictionary.getValue('column_label'));
-
-            if (dictionary.getValue('internal_type') == 'reference') {
-                var getRecord = new GlideRecord(getTable.getValue('name'));
-                getRecord.get(fieldQuery, recordQuery);
+            if (getRecord.isValid() && recordQuery == getRecord.getDisplayValue()) {
+                displayField.push(dictionary.getValue('column_label'));
                 displayRecord.push(getRecord.getDisplayValue());
                 encodedQueryDisplay.push(' ');
             } else {
-                displayRecord.push(recordQuery);
+                displayField.push(dictionary.getValue('column_label'));
+                displayRecord.push(recordQuery.toString());
                 encodedQueryDisplay.push(' ');
             }
+        } else {
+            displayField.push(dictionary.getValue('column_label'));
+            displayRecord.push(recordQuery);
+            encodedQueryDisplay.push(' ');
         }
+
     }
     //MORE THAN ONE PERIOD, EQUALS, FIRST LINE
     /*else if(conditions[a].toString().includes('.') && conditions[a].toString().includes('=') && (orLine == 'False' || andLine == 'False')){
@@ -662,53 +662,46 @@ for (var t = 0; t < newTable.length; t++) {
 
 for (var m = 0; m < displayField.length; m++) {
     if (displayRecord[m].toString().indexOf('.') != '-1') {
-      if(displayRecord[m].toString() == null){
-        gs.info('NULL RECORD ' + displayRecord[m] + ' ' + [m]);
-        updatedConditions.push(displayField[m].toString() + ' ' + operator[m].toString() + ' NULL DISPLAY RECORD ' + encodedQueryDisplay[m].toString());
-      }else if (displayField[m].toString() == null){
-        gs.info('NULL FIELD ' + displayField[m] + ' ' + [m]);
-        updatedConditions.push('NULL FIELD ' + operator[m].toString() + ' ' + displayRecord[m].toString() + ' ' + encodedQueryDisplay[m].toString());
-      }else if(operator[m].toString() == null){
-        gs.info('NULL OPERATOR ' + operator[m] + ' ' + [m]);
-        updatedConditions.push(displayField[m].toString() + ' NULL OPERATOR ' + displayReceord[m].toString() + ' ' + encodedQueryDisplay[m].toString());
-      }else{
-        updatedConditions.push(displayField[m].toString() + ' ' + displayRecord[m].toString().replaceAll(',', '|') + ' ' + operator[m].toString() + ' ' + encodedQueryDisplay[m].toString());
-      }
+        if (displayRecord[m].toString() == null) {
+            updatedConditions.push(displayField[m].toString() + ' ' + operator[m].toString() + ' NULL DISPLAY RECORD ' + encodedQueryDisplay[m].toString());
+        } else if (displayField[m].toString() == null) {
+            updatedConditions.push('NULL FIELD ' + operator[m].toString() + ' ' + displayRecord[m].toString() + ' ' + encodedQueryDisplay[m].toString());
+        } else if (operator[m].toString() == null) {
+            updatedConditions.push(displayField[m].toString() + ' NULL OPERATOR ' + displayReceord[m].toString() + ' ' + encodedQueryDisplay[m].toString());
+        } else {
+            updatedConditions.push(displayField[m].toString() + ' ' + displayRecord[m].toString().replaceAll(',', '|') + ' ' + operator[m].toString() + ' ' + encodedQueryDisplay[m].toString());
+        }
     } else {
-      if(displayField[m].toString() == null){
-        gs.info('NULL FIELD ' + displayField[m] + ' ' + [m]);
-        updatedConditions.push('NULL FIELD ' + operator[m].toString() + ' ' + displayRecord[m].toString().replaceAll(',', '|'));
-      }else if (displayRecord[m].toString() == null){
-        gs.info('NULL RECORD ' + displayRecord[m] + ' ' + [m]);
-        updatedConditions.push(displayField[m].toString() + ' ' + operator[m].toString() + ' NULL RECORD');
-      }else if (operator[m].toString() == null){
-        gs.info('NULL OPERATOR ' + operator[m] + ' ' + [m]);
-        updatedConditions.push(displayField[m].toString() + ' OPERATOR NULL ' + displayRecord[m].toString().replaceAll(',', '|'));
-      }else{
-        updatedConditions.push(displayField[m].toString() + ' ' + operator[m].toString() + ' ' + displayRecord[m].toString().replaceAll(',', '|'));
-      }
+        if (displayField[m].toString() == null) {
+            updatedConditions.push('NULL FIELD ' + operator[m].toString() + ' ' + displayRecord[m].toString().replaceAll(',', '|'));
+        } else if (displayRecord[m].toString() == null) {
+            updatedConditions.push(displayField[m].toString() + ' ' + operator[m].toString() + ' NULL RECORD');
+        } else if (operator[m].toString() == null) {
+            updatedConditions.push(displayField[m].toString() + ' OPERATOR NULL ' + displayRecord[m].toString().replaceAll(',', '|'));
+        } else {
+            updatedConditions.push(displayField[m].toString() + ' ' + operator[m].toString() + ' ' + displayRecord[m].toString().replaceAll(',', '|'));
+        }
     }
 }
 
-newNames = newNames.toString().split(',').join('\n');
-newTable = newTable.toString().split(',').join('\n');
+
+//newNames = newNames.toString().split(',').join('\n');
+//newTable = newTable.toString().split(',').join('\n');
 //conditions = conditions.toString().replaceAll('^EQ', '').split(',').join('\n');
-newOrder = newOrder.toString().split(',').join('\n');
-newMatch = newMatch.toString().split(',').join('\n');
-newScript = newScript.toString().split(',').join('\n');
-newUser = newUser.toString().split(',').join('\n');
-newGroup = newGroup.toString().split(',').join('\n');
-newSysID = newSysID.toString().split(',').join('\n');
-updatedConditions = updatedConditions.toString().split(',').join('\n').replaceAll('|', ',');
+//newOrder = newOrder.toString().split(',').join('\n');
+//newMatch = newMatch.toString().split(',').join('\n');
+//newScript = newScript.toString().split(',').join('\n');
+//newUser = newUser.toString().split(',').join('\n');
+//newGroup = newGroup.toString().split(',').join('\n');
+//newSysID = newSysID.toString().split(',').join('\n');
+//updatedConditions = updatedConditions.toString().split(',').join('\n').replaceAll('|', ',');
 
-gs.info(newNames);
-gs.info(newTable);
-gs.info(newOrder);
-gs.info(newMatch);
-gs.info(newUser);
-gs.info(newGroup);
-gs.info(newScript);
-gs.info(newSysID);
-gs.info(updatedConditions);
-
-
+//gs.info(newNames + '\n');
+//gs.info(newTable + '\n');
+//gs.info(newOrder + '\n');
+//gs.info(newMatch + '\n');
+//gs.info(newUser + '\n');
+//gs.info(newGroup + '\n');
+//gs.info(newScript + '\n');
+//gs.info(newSysID + '\n');
+//gs.info(updatedConditions);
